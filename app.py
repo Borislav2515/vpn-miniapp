@@ -2,8 +2,12 @@ from flask import Flask, render_template_string, request, redirect, url_for, ses
 import sqlite3
 import requests
 import os
+import urllib3
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+
+# Отключаем предупреждения о небезопасных SSL запросах
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
 
@@ -13,6 +17,10 @@ app.secret_key = 'supersecretkey'
 # Конфиг серверов
 OUTLINE_SERVERS = {
     "USA": {
+        "api_url": "https://80.209.242.200:10467/mrK1gt5EE2Co18a13bAAtQ",
+        "token": "e5d439f5-a184-4ef6-8fc8-d4e8dea63d0c"
+    },
+    "Germany": {
         "api_url": "https://80.209.242.200:10467/mrK1gt5EE2Co18a13bAAtQ",
         "token": "e5d439f5-a184-4ef6-8fc8-d4e8dea63d0c"
     },
@@ -70,6 +78,7 @@ def render_page(content, title="VPN Mini App", **kwargs):
                 border: 1px solid rgba(255, 255, 255, 0.18);
                 border-radius: 20px;
                 box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                overflow: hidden;
             }
             .glass-card-small {
                 background: rgba(255, 255, 255, 0.15);
@@ -88,6 +97,12 @@ def render_page(content, title="VPN Mini App", **kwargs):
                 padding: 12px 24px;
                 transition: all 0.3s ease;
                 box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                width: 170px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
             }
             .ios-button:hover {
                 transform: translateY(-2px);
@@ -103,6 +118,12 @@ def render_page(content, title="VPN Mini App", **kwargs):
                 padding: 12px 24px;
                 transition: all 0.3s ease;
                 backdrop-filter: blur(10px);
+                width: 170px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
             }
             .ios-button-outline:hover {
                 background: rgba(255, 255, 255, 0.3);
@@ -140,6 +161,37 @@ def render_page(content, title="VPN Mini App", **kwargs):
                 justify-content: center;
                 backdrop-filter: blur(5px);
             }
+            .page-header {
+                font-size: 24px;
+                font-weight: 700;
+            }
+            .card-title {
+                font-size: 18px;
+                font-weight: 600;
+            }
+            .card-text {
+                font-size: 14px;
+            }
+            .back-button {
+                position: absolute;
+                top: -3px;
+                left: 15px;
+                background: rgba(255, 255, 255, 0.2);
+                border: none;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                backdrop-filter: blur(10px);
+                color: white;
+                text-decoration: none;
+            }
+            .back-button:hover {
+                background: rgba(255, 255, 255, 0.3);
+                color: white;
+            }
         </style>
         <script>
             if (window.Telegram && window.Telegram.WebApp) {
@@ -169,16 +221,16 @@ def index():
         <div class="d-flex align-items-center">
           <img src="{{ user_avatar }}" alt="avatar" width="56" height="56" class="rounded-circle me-3 border border-white border-2">
           <div>
-            <div class="fw-bold text-white fs-5">Здравствуйте, {{ user_name }}</div>
-            <div class="text-white-60 small">@{{ telegram_id }}</div>
-            <div class="mt-1"><span class="text-white-80">Посетите ваш личный кабинет</span></div>
+            <div class="fw-bold text-white card-title">Здравствуйте, {{ user_name }}</div>
+            <div class="text-white-60 card-text">@{{ telegram_id }}</div>
+            <div class="mt-1"><span class="text-white-80 card-text">Посетите ваш личный кабинет</span></div>
           </div>
         </div>
-        <a href="{{ url_for('my_keys') }}" class="ios-button-outline text-decoration-none">Перейти &gt;</a>
+        <a href="{{ url_for('my_keys') }}" class="btn ios-button">Перейти &gt;</a>
       </div>
     </div>
 
-    <!-- Блок каталог -->
+    <!-- Блок выбрать сервер -->
     <div class="glass-card p-4 mb-3">
       <div class="d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center">
@@ -188,16 +240,16 @@ def index():
               <path d="M8 0c-.69 0-1.342.13-1.972.38C3.12 1.07 1.5 2.522 1.5 4.5c0 5.25 5.5 7.5 5.5 7.5s5.5-2.25 5.5-7.5c0-1.978-1.62-3.43-4.528-4.12A5.978 5.978 0 0 0 8 0zm0 1c.638 0 1.25.12 1.82.34C12.12 2.07 13.5 3.522 13.5 5.5c0 4.5-4.5 6.5-4.5 6.5S3.5 10 3.5 5.5c0-1.978 1.38-3.43 3.68-4.16A5.978 5.978 0 0 1 8 1z"/>
             </svg>
           </div>
-          <div class="fw-bold text-white fs-4">Каталог</div>
+          <div class="fw-bold text-white card-title">Выбрать сервер</div>
         </div>
-        <a href="{{ url_for('catalog') }}" class="ios-button text-decoration-none">Каталог</a>
+        <a href="{{ url_for('catalog') }}" class="btn ios-button">Выбрать</a>
       </div>
     </div>
 
     <!-- Две карточки -->
     <div class="row g-3 mb-3">
       <div class="col-6">
-        <div class="glass-card-small p-3 h-100 d-flex align-items-center">
+        <div class="glass-card p-3 h-100 d-flex align-items-center">
           <div class="card-icon me-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" class="bi bi-translate" viewBox="0 0 16 16">
               <path d="M4.5 1a.5.5 0 0 1 .5.5V2h6v-.5a.5.5 0 0 1 1 0V2h.5A1.5 1.5 0 0 1 14 3.5v9A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-9A1.5 1.5 0 0 1 3.5 2H4V1.5a.5.5 0 0 1 .5-.5zM3.5 3A.5.5 0 0 0 3 3.5v9a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-9z"/>
@@ -205,21 +257,21 @@ def index():
             </svg>
           </div>
           <div>
-            <div class="fw-bold text-white">Язык</div>
-            <div class="fs-5 text-white-80">{{ lang|upper }}</div>
+            <div class="fw-bold text-white card-title">Язык</div>
+            <div class="fs-5 text-white-80 card-text">{{ lang|upper }}</div>
           </div>
         </div>
       </div>
       <div class="col-6">
-        <div class="glass-card-small p-3 h-100 d-flex align-items-center">
+        <div class="glass-card p-3 h-100 d-flex align-items-center">
           <div class="card-icon me-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" class="bi bi-wallet2" viewBox="0 0 16 16">
               <path d="M12 5H2.5A1.5 1.5 0 0 0 1 6.5v5A1.5 1.5 0 0 0 2.5 13h11A1.5 1.5 0 0 0 15 11.5v-5A1.5 1.5 0 0 0 13.5 5H13V4a2 2 0 0 0-2-2H3.5A1.5 1.5 0 0 0 2 3.5V5h10V4a1 1 0 0 1 1-1h.5A.5.5 0 0 1 14 3.5V5h-2z"/>
             </svg>
           </div>
           <div>
-            <div class="fw-bold text-white">Кошелек</div>
-            <div class="fs-6 text-white-60">{{ 'Подключен' if wallet_connected else 'Не подключен' }}</div>
+            <div class="fw-bold text-white card-title">Кошелек</div>
+            <div class="fs-6 text-white-60 card-text">{{ 'Подключен' if wallet_connected else 'Не подключен' }}</div>
           </div>
         </div>
       </div>
@@ -236,9 +288,9 @@ def index():
               <circle cx="8" cy="12" r=".5"/>
             </svg>
           </div>
-          <div class="fw-bold text-white fs-4">Часто задаваемые вопросы</div>
+          <div class="fw-bold text-white card-title">Часто задаваемые вопросы</div>
         </div>
-        <a href="#faq" class="ios-button-outline text-decoration-none">Перейти</a>
+        <a href="#faq" class="btn ios-button">Перейти</a>
       </div>
     </div>
 
@@ -253,11 +305,11 @@ def index():
             </svg>
           </div>
           <div>
-            <div class="fw-bold text-white fs-4">Поддержка</div>
-            <div class="text-white-60 small">Мы всегда готовы помочь вам</div>
+            <div class="fw-bold text-white card-title">Поддержка</div>
+            <div class="text-white-60 card-text">Мы всегда готовы помочь вам</div>
           </div>
         </div>
-        <a href="#support" class="ios-button-outline text-decoration-none">В поддержку &gt;</a>
+        <a href="#support" class="ios-button">В поддержку &gt;</a>
       </div>
     </div>
     '''
@@ -278,22 +330,32 @@ def catalog():
         }
     ]
     content = '''
-    <h3 class="mb-4 text-white">Выберите сервер</h3>
-    <div class="row g-4">
-    {% for c in countries %}
-      <div class="col-6">
-        <div class="glass-card text-center h-100" style="border-radius:18px;">
-          <div class="card-body d-flex flex-column align-items-center justify-content-between">
-            <img src="{{c.flag}}" alt="flag" style="width:64px;height:64px;object-fit:cover;" class="mb-2 mt-2">
-            <div class="fw-bold fs-5 mb-2 text-white">{{c.name}}</div>
-            <a href="{{ url_for('get_key', country=c.code) }}" class="ios-button w-100 text-decoration-none">Получить ключ</a>
-          </div>
+    <div style="position: relative;">
+        <div class="d-flex flex-row justify-content-center align-items-center w-100 mb-3">
+            <a href="{{ url_for('index') }}" class="btn back-button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+              </svg>
+            </a>
+          <h3 class="page-header text-white text-center">Выберите сервер</h3>
         </div>
-      </div>
-    {% endfor %}
+        
+        <div class="row g-4">
+        {% for c in countries %}
+          <div class="col-6">
+            <div class="glass-card padding-2 text-center h-100" style="border-radius:18px;">
+              <div class="card-body d-flex flex-column align-items-center justify-content-between">
+                <img src="{{c.flag}}" alt="flag" style="width:100%;height:140px;object-fit:cover;" class="mb-2">
+                <div class="fw-bold fs-5 mb-2 text-white card-title">{{c.name}}</div>
+                <a href="{{ url_for('get_key', country=c.code) }}" class="ios-button btn mb-3">Получить ключ</a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        </div>
     </div>
     '''
-    return render_page(content, title="Каталог серверов", countries=countries)
+    return render_page(content, title="Выбор сервера", countries=countries)
 
 @app.route('/get_key')
 def get_key():
@@ -315,10 +377,17 @@ def get_key():
         
         server = OUTLINE_SERVERS[country]
         try:
-            r = requests.post(f"{server['api_url']}/access-keys", headers={"Authorization": f"Bearer {server['token']}"}, timeout=10)
+            r = requests.post(f"{server['api_url']}/access-keys", 
+                            headers={"Authorization": f"Bearer {server['token']}"}, 
+                            timeout=10, 
+                            verify=False)  # Отключаем проверку SSL
             r.raise_for_status()
             key_data = r.json()
             outline_key = key_data.get('accessUrl')
+            if not outline_key:
+                return render_page('<div class="alert alert-danger">Не удалось получить ключ от сервера</div>', title="Ошибка")
+        except requests.exceptions.RequestException as e:
+            return render_page(f'<div class="alert alert-danger">Ошибка подключения к серверу: {e}</div>', title="Ошибка")
         except Exception as e:
             return render_page(f'<div class="alert alert-danger">Ошибка при получении ключа: {e}</div>', title="Ошибка")
         
@@ -329,11 +398,21 @@ def get_key():
         conn.commit()
     
     content = f'''
-        <h3 class="mb-3 text-white">Ваш Outline-ключ для <b>{country}</b></h3>
-        <div class="outline-key text-white mb-3">{outline_key}</div>
-        <p class="text-white">Бесплатно до: <b>{expires_at.strftime('%Y-%m-%d %H:%M')}</b></p>
-        <a class="ios-button-outline w-100 mb-2 text-decoration-none" href="{{ url_for('my_keys') }}">Мои ключи</a>
-        <a class="ios-button-outline w-100 text-decoration-none" href="{{ url_for('index') }}">Назад</a>
+        <div class="glass-card p-4 mb-4">
+            <h3 class="mb-3 text-white text-center">✅ Ключ успешно создан!</h3>
+            <div class="text-center mb-3">
+                <div class="badge bg-success fs-6 mb-2">Страна: {country}</div>
+                <div class="badge bg-info fs-6 mb-2">Бесплатно до: {expires_at.strftime('%d.%m.%Y %H:%M')}</div>
+            </div>
+            <div class="outline-key text-white mb-4 text-center">
+                <small class="text-white-60 d-block mb-2">Ваш Outline ключ:</small>
+                <code class="fs-6">{outline_key}</code>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                <a class="ios-button" href="{{ url_for('my_keys') }}">Мои ключи</a>
+                <a class="ios-button-outline" href="{{ url_for('index') }}">На главную</a>
+            </div>
+        </div>
     '''
     return render_page(content, title="Ваш ключ")
 
@@ -375,5 +454,7 @@ def my_keys():
     return render_page(content, title="Мои ключи", keys=keys)
 
 if __name__ == '__main__':
+    import sys
     init_db()
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port) 
